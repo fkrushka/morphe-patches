@@ -93,6 +93,8 @@ To translate new languages or improve the existing translations, visit morphe.so
     <string name="morphe_settings_about_contributors_all_time">All time</string>
     <string name="morphe_settings_about_contributors_6_months">6 months</string>
     <string name="morphe_settings_about_contributors_3_months">3 months</string>
+    <!-- Under the title of the contributors, how many are listed for the period picked. %s is the number -->
+    <string name="morphe_settings_about_contributors_count">%s users</string>
     <!-- People who donate to Morphe -->
     <string name="morphe_settings_about_supporters">Supporters</string>
     <string name="morphe_settings_about_supporters_summary">Backers on Open Collective</string>

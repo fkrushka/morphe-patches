@@ -93,7 +93,7 @@ class MorpheCreditsDialog extends AboutWebViewDialog {
         String icon = AboutDialogStyle.linkIcon(MorpheAboutPreference.CREDITS_LINK_PLACEHOLDER_URL);
         String title = str("morphe_settings_about_contributors");
         if (periods.isEmpty()) {
-            html.append(AboutDialogStyle.peopleHeader(icon, title, str("morphe_settings_about_contributors_all_time")));
+            html.append(AboutDialogStyle.peopleHeader(icon, title, str("morphe_settings_about_people_unavailable")));
             // The people of the project itself, where the list cannot name them.
             appendContributors(html, str("morphe_settings_about_contributors_current"), WORKS_LINKS_CURRENT);
         } else {
@@ -137,11 +137,11 @@ class MorpheCreditsDialog extends AboutWebViewDialog {
                     .append(i).append(i == 0 ? "\" checked>" : "\">");
         }
 
+        // The period is on the tab picked, so the header only says how many there are.
         StringBuilder subtitle = new StringBuilder();
         for (int i = 0; i < size; i++) {
-            Period period = periods.get(i);
             subtitle.append("<span class=\"period-count period-").append(i).append("\">")
-                    .append(period.label()).append(" · ").append(period.contributors().size())
+                    .append(str("morphe_settings_about_contributors_count", periods.get(i).contributors().size()))
                     .append("</span>");
         }
         html.append(AboutDialogStyle.peopleHeader(icon, title, subtitle.toString()));
