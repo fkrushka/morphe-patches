@@ -210,6 +210,11 @@ final class AboutStylesheet {
             .period-tabs ~ .period-list {
                 padding-top: 0;
             }
+            /* Someone moving to their place in the list of another period is there already, so their
+               picture does not come in again. */
+            .period-list .person.moved .avatar {
+                animation: none;
+            }
             .header-icon {
                 display: flex;
                 align-items: center;

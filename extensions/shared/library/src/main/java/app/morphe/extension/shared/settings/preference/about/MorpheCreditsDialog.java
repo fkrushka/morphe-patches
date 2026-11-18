@@ -74,6 +74,71 @@ class MorpheCreditsDialog extends AboutWebViewDialog {
     private record Period(String label, List<AboutRoutes.Person> contributors) {
     }
 
+    /**
+     * Moves everyone listed for the period picked from where they stood in the list shown before,
+     * rather than showing the new list at once. Only someone not in the list before comes in as
+     * the list does on opening. A move from far down is cut to a few rows, as in Morphe Manager.
+     */
+    private static final String PERIOD_MOVE_SCRIPT = """
+            <script>(function () {
+                var MAX_ROWS = 6;
+                var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+                // Where everyone stood in the list shown before a tab was tapped, by their link.
+                var shownPlaces = null;
+
+                function shownGrid() {
+                    var input = document.querySelector('.period-input:checked');
+                    return document.querySelector('.period-list.' + input.id + ' .people-grid');
+                }
+
+                function places(grid) {
+                    var origin = grid.getBoundingClientRect();
+                    var result = {};
+                    grid.querySelectorAll('.person').forEach(function (person) {
+                        var rect = person.getBoundingClientRect();
+                        result[person.getAttribute('href')] = { x: rect.left - origin.left, y: rect.top - origin.top };
+                    });
+                    return result;
+                }
+
+                // A tap on a tab reaches it before its radio button changes, while the list it
+                // switches from is still shown.
+                document.querySelectorAll('.period-tab').forEach(function (tab) {
+                    tab.addEventListener('click', function () {
+                        shownPlaces = places(shownGrid());
+                    });
+                });
+
+                document.querySelectorAll('.period-input').forEach(function (input) {
+                    input.addEventListener('change', function () {
+                        var before = shownPlaces;
+                        shownPlaces = null;
+                        if (!before) return;
+                        var grid = shownGrid();
+                        var after = places(grid);
+                        var first = grid.querySelector('.person');
+                        var maxShift = first ? MAX_ROWS * (first.offsetHeight + parseFloat(getComputedStyle(grid).rowGap)) : 0;
+                        grid.querySelectorAll('.person').forEach(function (person) {
+                            var link = person.getAttribute('href');
+                            var from = before[link];
+                            person.classList.toggle('moved', !!from);
+                            // Whoever is new comes in with the others moving, not in the wave of opening.
+                            person.querySelector('.avatar').style.animationDelay = '0ms';
+                            if (!from || reduceMotion.matches) return;
+                            var to = after[link];
+                            var dx = from.x - to.x;
+                            var dy = Math.max(-maxShift, Math.min(maxShift, from.y - to.y));
+                            if (dx === 0 && dy === 0) return;
+                            person.animate([
+                                { transform: 'translate(' + dx + 'px, ' + dy + 'px)' },
+                                { transform: 'none' }
+                            ], { duration: 450, easing: 'cubic-bezier(0.2, 0.9, 0.3, 1.05)' });
+                        });
+                    });
+                });
+            })();</script>
+            """;
+
     private static void addPeriod(List<Period> periods, String labelKey, List<AboutRoutes.Person> contributors) {
         // A period with no one in it, or that the API does not serve, gets no tab.
         if (!contributors.isEmpty()) periods.add(new Period(str(labelKey), contributors));
@@ -128,7 +193,7 @@ class MorpheCreditsDialog extends AboutWebViewDialog {
     /**
      * Appends the header, a tab for each period and the list of each. The tabs are radio buttons
      * that come before everything they switch, so the stylesheet shows the period of the checked
-     * one and the page needs no script.
+     * one. A script only moves the people from one list to the next.
      */
     private static void appendPeriods(StringBuilder html, String icon, String title, List<Period> periods) {
         final int size = periods.size();
@@ -159,6 +224,10 @@ class MorpheCreditsDialog extends AboutWebViewDialog {
             html.append("<div class=\"section period-list period-").append(i).append("\">");
             AboutDialogStyle.appendPeople(html, periods.get(i).contributors());
             html.append("</div>");
+        }
+
+        if (size > 1) {
+            html.append(PERIOD_MOVE_SCRIPT);
         }
     }
 
