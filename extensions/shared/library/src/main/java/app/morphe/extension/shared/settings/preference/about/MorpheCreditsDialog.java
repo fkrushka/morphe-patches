@@ -17,8 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Who wrote the patches: everyone who committed to Morphe over the last year, over the projects
- * Morphe grew out of.
+ * Who wrote the patches: everyone who committed to Morphe, for all time or a recent period, over
+ * the projects Morphe grew out of.
  */
 class MorpheCreditsDialog extends AboutWebViewDialog {
 
@@ -68,26 +68,36 @@ class MorpheCreditsDialog extends AboutWebViewDialog {
 
     static boolean showVancedAsPastContributor = true;
 
+    /**
+     * A period the contributors are listed for, picked from a row of tabs.
+     */
+    private record Period(String label, List<AboutRoutes.Person> contributors) {
+    }
+
+    private static void addPeriod(List<Period> periods, String labelKey, List<AboutRoutes.Person> contributors) {
+        // A period with no one in it, or that the API does not serve, gets no tab.
+        if (!contributors.isEmpty()) periods.add(new Period(str(labelKey), contributors));
+    }
+
     private static String createDialogHtml(Context context, @Nullable AboutRoutes.People people) {
         StringBuilder html = new StringBuilder(AboutDialogStyle.documentStart(context))
                 .append(AboutDialogStyle.pageStart(false));
 
-        List<AboutRoutes.Person> contributors = people == null ? List.of() : people.contributors();
+        List<Period> periods = new ArrayList<>();
+        if (people != null) {
+            addPeriod(periods, "morphe_settings_about_contributors_all_time", people.contributors());
+            addPeriod(periods, "morphe_settings_about_contributors_6_months", people.contributors6Months());
+            addPeriod(periods, "morphe_settings_about_contributors_3_months", people.contributors3Months());
+        }
 
-        String subtitle = str("morphe_settings_about_contributors_period");
-        if (!contributors.isEmpty()) subtitle += " · " + contributors.size();
-        html.append(AboutDialogStyle.peopleHeader(
-                AboutDialogStyle.linkIcon(MorpheAboutPreference.CREDITS_LINK_PLACEHOLDER_URL),
-                str("morphe_settings_about_contributors"),
-                subtitle));
-
-        if (contributors.isEmpty()) {
+        String icon = AboutDialogStyle.linkIcon(MorpheAboutPreference.CREDITS_LINK_PLACEHOLDER_URL);
+        String title = str("morphe_settings_about_contributors");
+        if (periods.isEmpty()) {
+            html.append(AboutDialogStyle.peopleHeader(icon, title, str("morphe_settings_about_contributors_all_time")));
             // The people of the project itself, where the list cannot name them.
             appendContributors(html, str("morphe_settings_about_contributors_current"), WORKS_LINKS_CURRENT);
         } else {
-            html.append("<div class=\"section\">");
-            AboutDialogStyle.appendPeople(html, contributors);
-            html.append("</div>");
+            appendPeriods(html, icon, title, periods);
         }
 
         List<Project> prior = new ArrayList<>(WORKS_LINKS_PRIOR);
@@ -113,6 +123,43 @@ class MorpheCreditsDialog extends AboutWebViewDialog {
                 .append(AboutDialogStyle.DOCUMENT_END);
 
         return html.toString();
+    }
+
+    /**
+     * Appends the header, a tab for each period and the list of each. The tabs are radio buttons
+     * that come before everything they switch, so the stylesheet shows the period of the checked
+     * one and the page needs no script.
+     */
+    private static void appendPeriods(StringBuilder html, String icon, String title, List<Period> periods) {
+        final int size = periods.size();
+        for (int i = 0; i < size; i++) {
+            html.append("<input type=\"radio\" name=\"period\" class=\"period-input\" id=\"period-")
+                    .append(i).append(i == 0 ? "\" checked>" : "\">");
+        }
+
+        StringBuilder subtitle = new StringBuilder();
+        for (int i = 0; i < size; i++) {
+            Period period = periods.get(i);
+            subtitle.append("<span class=\"period-count period-").append(i).append("\">")
+                    .append(period.label()).append(" · ").append(period.contributors().size())
+                    .append("</span>");
+        }
+        html.append(AboutDialogStyle.peopleHeader(icon, title, subtitle.toString()));
+
+        if (size > 1) {
+            html.append("<div class=\"period-tabs\">");
+            for (int i = 0; i < size; i++) {
+                html.append("<label for=\"period-").append(i).append("\" class=\"period-tab period-").append(i)
+                        .append("\">").append(periods.get(i).label()).append("</label>");
+            }
+            html.append("</div>");
+        }
+
+        for (int i = 0; i < size; i++) {
+            html.append("<div class=\"section period-list period-").append(i).append("\">");
+            AboutDialogStyle.appendPeople(html, periods.get(i).contributors());
+            html.append("</div>");
+        }
     }
 
     /**

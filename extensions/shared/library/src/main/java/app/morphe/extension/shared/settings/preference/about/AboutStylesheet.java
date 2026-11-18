@@ -159,6 +159,57 @@ final class AboutStylesheet {
             .list-header + .section {
                 padding-top: 0;
             }
+            /* Periods a list is shown for. Hidden radio buttons ahead of the page hold the one picked,
+               so only its count, tab and list show. Up to three periods are styled. */
+            .period-input {
+                display: none;
+            }
+            .period-input ~ .list-header .period-count, .period-input ~ .period-list {
+                display: none;
+            }
+            #period-0:checked ~ .list-header .period-count.period-0,
+            #period-1:checked ~ .list-header .period-count.period-1,
+            #period-2:checked ~ .list-header .period-count.period-2 {
+                display: inline;
+            }
+            #period-0:checked ~ .period-list.period-0,
+            #period-1:checked ~ .period-list.period-1,
+            #period-2:checked ~ .period-list.period-2 {
+                display: block;
+            }
+            .period-tabs {
+                display: flex;
+                gap: 4px;
+                margin: 0 16px 16px;
+                padding: 4px;
+                border-radius: 999px;
+                background: rgba(128, 128, 128, 0.10);
+                border: 1px solid rgba(128, 128, 128, 0.16);
+            }
+            .period-tab {
+                flex: 1;
+                min-width: 0;
+                padding: 8px 4px;
+                border-radius: 999px;
+                text-align: center;
+                font-size: 14px;
+                font-weight: 600;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                opacity: 0.7;
+                transition: background 150ms, color 150ms, opacity 150ms;
+            }
+            #period-0:checked ~ .period-tabs .period-0,
+            #period-1:checked ~ .period-tabs .period-1,
+            #period-2:checked ~ .period-tabs .period-2 {
+                background: {accent};
+                color: {on-accent};
+                opacity: 1;
+            }
+            .period-tabs ~ .period-list {
+                padding-top: 0;
+            }
             .header-icon {
                 display: flex;
                 align-items: center;
