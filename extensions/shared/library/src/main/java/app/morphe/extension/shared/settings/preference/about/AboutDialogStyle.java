@@ -8,6 +8,7 @@
 package app.morphe.extension.shared.settings.preference.about;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.util.TypedValue;
 
@@ -16,6 +17,8 @@ import androidx.annotation.Nullable;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.Utils;
@@ -47,6 +50,13 @@ final class AboutDialogStyle {
 
     private static final int AVATAR_STAGGER_MILLIS = 30;
     private static final int AVATAR_STAGGERED = 32;
+
+    // Width of the picture of a person in the grid, in CSS pixels, which are dips.
+    private static final int PERSON_AVATAR_DIPS = 56;
+
+    // The size a GitHub picture is served at, which the API sets for a smaller picture than ours.
+    private static final Pattern GITHUB_AVATAR_SIZE =
+            Pattern.compile("^(https://avatars\\.githubusercontent\\.com/.*[?&]s=)\\d+$");
 
     // Least difference in luma, out of 255, at which an accent still shows on the background
     private static final int MIN_ACCENT_CONTRAST = 60;
@@ -227,6 +237,19 @@ final class AboutDialogStyle {
     }
 
     /**
+     * @return The url of a GitHub picture at as many pixels as a picture of a person is drawn
+     *         across on this screen, or the url as it is if it is not one.
+     */
+    @Nullable
+    private static String personAvatarUrl(@Nullable String url) {
+        if (url == null) return null;
+        Matcher matcher = GITHUB_AVATAR_SIZE.matcher(url);
+        if (!matcher.matches()) return url;
+        final int pixels = (int) Math.ceil(PERSON_AVATAR_DIPS * Resources.getSystem().getDisplayMetrics().density);
+        return matcher.group(1) + pixels;
+    }
+
+    /**
      * Appends people as a grid of pictures, each over a name and opening that person's page.
      */
     static void appendPeople(StringBuilder html, List<AboutRoutes.Person> people) {
@@ -235,7 +258,7 @@ final class AboutDialogStyle {
             AboutRoutes.Person person = people.get(i);
             html.append("<a href=\"").append(escapeHtml(person.url()))
                     .append(person.mega() ? "\" class=\"person mega\">" : "\" class=\"person\">")
-                    .append(avatar(person.name(), person.avatar(), i))
+                    .append(avatar(person.name(), personAvatarUrl(person.avatar()), i))
                     .append("<span class=\"person-name\">").append(escapeHtml(person.name()))
                     .append("</span></a>");
         }
